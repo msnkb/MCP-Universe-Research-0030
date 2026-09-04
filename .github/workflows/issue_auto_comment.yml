@@ -1,0 +1,35 @@
+name: Issue Auto Comment
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 'Add a comment based on label'
+      if: contains(github.event.issue.labels.*.name, 'bug') || contains(github.event.issue.labels.*.name, 'feature') || contains(github.event.issue.labels.*.name, 'discussion')
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const labels = context.payload.issue.labels.map((label) => label.name);
+          let commentBody = '';
+
+          if (labels.includes('bug')) {
+            commentBody = 'Thank you. We will fix it.';
+          } else if (labels.includes('feature')) {
+            commentBody = 'Thank you, we will consider to include this feature.';
+          } else if (labels.includes('discussion')) {
+            commentBody = 'Thanks for starting this discussion! We welcome community input.';
+          }
+
+          if (commentBody) {
+            await github.rest.issues.createComment({
+              issue_number: context.payload.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: commentBody
+            });
+          }
